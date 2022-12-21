@@ -1,7 +1,20 @@
 import { v4 as uuidv4, validate as uuidValidate } from "uuid";
 import { FirebaseApp, initializeApp } from "firebase/app";
-import { Auth, getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { child, Database, get, getDatabase, ref, set } from "firebase/database";
+import {
+  Auth,
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut as signOutFirebase,
+} from "firebase/auth";
+import {
+  child,
+  Database,
+  get,
+  getDatabase,
+  ref,
+  remove,
+  set,
+} from "firebase/database";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -23,14 +36,14 @@ interface IUser {
 class RankingManager {
   app: FirebaseApp;
   auth: Auth;
+  authenticated: boolean;
   database: Database;
-  signed: boolean;
 
   constructor(emailAddress: string, password: string) {
     this.app = initializeApp(firebaseConfig);
     this.auth = getAuth(this.app);
     this.database = getDatabase(this.app);
-    this.signed = false;
+    this.authenticated = false;
 
     this.signIn(emailAddress, password);
   }
@@ -39,11 +52,22 @@ class RankingManager {
     try {
       await signInWithEmailAndPassword(this.auth, emailAddress, password);
 
-      this._log("authenticated.");
-      this.signed = true;
+      this.authenticated = true;
+      this._log("user is authenticated.");
     } catch (error) {
-      this.signed = false;
-      this._log("not authenticated.");
+      this.authenticated = false;
+      this._log("user is not authenticated.");
+    }
+  }
+
+  async signOut() {
+    try {
+      await signOutFirebase(this.auth);
+
+      this._log("user is not authenticated anymore.");
+      this.authenticated = false;
+    } catch (error) {
+      this._log("an error occured and the user is still authenticated.");
     }
   }
 
@@ -57,58 +81,86 @@ class RankingManager {
     return true;
   }
 
-  private isSigned() {
-    if (!this.signed) {
-      this._log("please, authenticate.");
+  private isAuth() {
+    if (!this.authenticated) {
+      this._log("please, authenticate user.");
     }
 
-    return this.signed;
+    return this.authenticated;
   }
 
-  createUser(user: IUser) {
-    if (!this.isSigned()) return;
+  async createUser(user: IUser) {
+    if (!this.isAuth()) return;
 
-    const request = async () => {
-      try {
-        const id = uuidv4();
+    try {
+      const userId = uuidv4();
 
-        await set(ref(this.database, "users/" + id), user);
-        this._log("user created.", id);
-      } catch (error) {
+      await set(ref(this.database, `users/${userId}`), user);
+
+      this._log("user created.", userId);
+    } catch (error) {
+      if (!this.isAuth()) {
         this._log("an error occurred while creating the user.");
       }
-    };
-
-    request();
+    }
   }
 
-  updateUser(userId: string, user: IUser) {
-    if (!this.isSigned() || !this.isValidUserId(userId)) return;
+  async updateUser(userId: string, user: IUser) {
+    if (!this.isAuth() || !this.isValidUserId(userId)) return;
 
-    this._log("updateUser");
+    try {
+      await set(ref(this.database, `users/${userId}`), user);
+
+      this._log("user updated.", userId);
+    } catch (error) {
+      if (!this.isAuth()) {
+        this._log("an error occurred while updating the user.");
+      }
+    }
   }
 
-  deleteUser(userId: string) {
-    if (!this.isSigned() || !this.isValidUserId(userId)) return;
+  async deleteUser(userId: string) {
+    if (!this.isAuth() || !this.isValidUserId(userId)) return;
 
-    this._log("deleteUser");
+    try {
+      await remove(ref(this.database, `users/${userId}`));
+
+      this._log("user deleted.", userId);
+    } catch (error) {
+      if (!this.isAuth()) {
+        this._log("an error occurred while updating the user.");
+      }
+    }
   }
 
-  getUser(userId: string) {
-    if (!this.isSigned() || !this.isValidUserId(userId)) return;
+  async getUser(userId: string) {
+    if (!this.isAuth() || !this.isValidUserId(userId)) return;
 
-    const dbRef = ref(this.database);
+    const snapshot = await get(child(ref(this.database), `users/${userId}`));
 
-    const request = async () => {
-      const snapshot = await get(child(dbRef, `users/${userId}`));
+    if (snapshot.exists()) {
+      this._log(snapshot.val());
+    } else {
+      if (!this.isAuth()) {
+        this._log("an error occurred while getting user.");
+      }
+    }
+  }
+
+  async listUsers() {
+    try {
+      const snapshot = await get(child(ref(this.database), `users/`));
+
       if (snapshot.exists()) {
         this._log(snapshot.val());
       } else {
-        this._log("user does not exists.");
+        this._log("an error occurred while getting users.");
       }
-    };
-
-    request();
+    } catch (error) {
+      if (!this.isAuth()) {
+        this._log("an error occurred while listing users.");
+      }
+    }
   }
 
   private _log(...params: any) {
