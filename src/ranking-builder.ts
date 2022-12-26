@@ -11,9 +11,13 @@ import {
   Database,
   get,
   getDatabase,
+  limitToLast,
+  orderByChild,
+  query,
   ref,
   remove,
   set,
+  onValue,
 } from "firebase/database";
 
 const firebaseConfig = {
@@ -26,24 +30,39 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-interface IUser {
+export interface IRawUser {
   name: string;
   score: number;
   time: string;
-  ranking: number;
 }
 
-class RankingManager {
+export interface IUser {
+  createDate: number;
+  id: string;
+  name: string;
+  score: number;
+  time: string;
+}
+
+interface IRankingBuilder {
+  disableLog?: boolean;
+  emailAddress: string;
+  password: string;
+}
+
+export class RankingBuilder {
   app: FirebaseApp;
   auth: Auth;
   authenticated: boolean;
   database: Database;
+  disableLog: boolean;
 
-  constructor(emailAddress: string, password: string) {
+  constructor({ disableLog = false, emailAddress, password }: IRankingBuilder) {
     this.app = initializeApp(firebaseConfig);
     this.auth = getAuth(this.app);
     this.database = getDatabase(this.app);
     this.authenticated = false;
+    this.disableLog = disableLog;
 
     this.signIn(emailAddress, password);
   }
@@ -71,7 +90,7 @@ class RankingManager {
     }
   }
 
-  private isValidUserId(userId: string) {
+  private _isValidUserId(userId: string) {
     if (!uuidValidate(userId)) {
       this._log("userId is not valid.");
 
@@ -81,7 +100,7 @@ class RankingManager {
     return true;
   }
 
-  private isAuth() {
+  private _isAuth() {
     if (!this.authenticated) {
       this._log("please, authenticate user.");
     }
@@ -89,83 +108,116 @@ class RankingManager {
     return this.authenticated;
   }
 
-  async createUser(user: IUser) {
-    if (!this.isAuth()) return;
+  async createUser(user: IRawUser) {
+    if (!this._isAuth()) return;
 
     try {
       const userId = uuidv4();
+      const createDate = Date.now();
 
-      await set(ref(this.database, `users/${userId}`), user);
+      await set(ref(this.database, `users/${userId}`), {
+        ...user,
+        createDate,
+        id: userId,
+      });
 
       this._log("user created.", userId);
+
+      return { ok: true };
     } catch (error) {
-      if (!this.isAuth()) {
+      if (!this._isAuth()) {
         this._log("an error occurred while creating the user.");
       }
+
+      return null;
     }
   }
 
   async updateUser(userId: string, user: IUser) {
-    if (!this.isAuth() || !this.isValidUserId(userId)) return;
+    if (!this._isAuth() || !this._isValidUserId(userId)) return;
 
     try {
       await set(ref(this.database, `users/${userId}`), user);
 
       this._log("user updated.", userId);
+
+      return { ok: true };
     } catch (error) {
-      if (!this.isAuth()) {
+      if (!this._isAuth()) {
         this._log("an error occurred while updating the user.");
       }
+
+      return null;
     }
   }
 
   async deleteUser(userId: string) {
-    if (!this.isAuth() || !this.isValidUserId(userId)) return;
+    if (!this._isAuth() || !this._isValidUserId(userId)) return null;
 
     try {
       await remove(ref(this.database, `users/${userId}`));
 
       this._log("user deleted.", userId);
+
+      return { ok: true };
     } catch (error) {
-      if (!this.isAuth()) {
+      if (!this._isAuth()) {
         this._log("an error occurred while updating the user.");
       }
+
+      return null;
     }
   }
 
   async getUser(userId: string) {
-    if (!this.isAuth() || !this.isValidUserId(userId)) return;
+    if (!this._isAuth() || !this._isValidUserId(userId)) return null;
 
     const snapshot = await get(child(ref(this.database), `users/${userId}`));
 
     if (snapshot.exists()) {
-      this._log(snapshot.val());
+      const user: IUser = snapshot.val();
+
+      this._log(user);
+
+      return user;
     } else {
-      if (!this.isAuth()) {
+      if (!this._isAuth()) {
         this._log("an error occurred while getting user.");
       }
+
+      return null;
     }
   }
 
-  async listUsers() {
+  async listUsers(callback: any, top = 20) {
     try {
-      const snapshot = await get(child(ref(this.database), `users/`));
+      const result = query(
+        ref(this.database, "users"),
+        orderByChild("score"),
+        limitToLast(top)
+      );
 
-      if (snapshot.exists()) {
-        this._log(snapshot.val());
-      } else {
-        this._log("an error occurred while getting users.");
-      }
+      return onValue(result, (snapshot) => {
+        callback(
+          Object.values(snapshot.val()).sort(
+            (a: any, b: any) => b.score - a.score
+          )
+        );
+      });
     } catch (error) {
-      if (!this.isAuth()) {
+      if (!this._isAuth()) {
         this._log("an error occurred while listing users.");
       }
+
+      return null;
     }
   }
 
   private _log(...params: any) {
+    if (this.disableLog) {
+      return;
+    }
+
     console.log(`[Ranking Builder]`, ...params);
   }
 }
-
-export default RankingManager;

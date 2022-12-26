@@ -1,7 +1,7 @@
 {
   "name": "ranking-builder",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "index.ts",
   "repository": "https://github.com/interaminense-creative-lab/ranking-builder",
   "author": "Adriano Interaminense",
   "license": "MIT",
@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "@types/uuid": "^9.0.0",
-    "firebase": "^9.15.0",
-    "uuid": "^9.0.0"
+    "firebase": "^9.15.0"
   }
 }
