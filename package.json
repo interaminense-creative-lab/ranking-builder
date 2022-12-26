@@ -1,6 +1,6 @@
 {
   "name": "ranking-builder",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.ts",
   "repository": "https://github.com/interaminense-creative-lab/ranking-builder",
   "author": "Adriano Interaminense",
