@@ -1,5 +1,5 @@
 import { v4 as uuidv4, validate as uuidValidate } from "uuid";
-import { FirebaseApp, initializeApp } from "firebase/app";
+import { FirebaseApp, FirebaseOptions, initializeApp } from "firebase/app";
 import {
   Auth,
   getAuth,
@@ -20,16 +20,6 @@ import {
   onValue,
 } from "firebase/database";
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGIN_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-};
-
 export interface IRawUser {
   name: string;
   score: number;
@@ -44,11 +34,13 @@ export interface IUser {
   time: string;
 }
 
-interface IRankingBuilder {
+export interface IRankingBuilder {
   disableLog?: boolean;
   emailAddress: string;
   password: string;
 }
+
+export interface IFirebaseConfig extends FirebaseOptions {}
 
 export class RankingBuilder {
   app: FirebaseApp;
@@ -57,8 +49,11 @@ export class RankingBuilder {
   database: Database;
   disableLog: boolean;
 
-  constructor({ disableLog = false, emailAddress, password }: IRankingBuilder) {
-    this.app = initializeApp(firebaseConfig);
+  constructor(
+    { disableLog = false, emailAddress, password }: IRankingBuilder,
+    config: IFirebaseConfig
+  ) {
+    this.app = initializeApp(config);
     this.auth = getAuth(this.app);
     this.database = getDatabase(this.app);
     this.authenticated = false;
@@ -189,7 +184,7 @@ export class RankingBuilder {
     }
   }
 
-  async listUsers(callback: any, top = 20) {
+  async listUsers(callback: (users: IUser[]) => void, top = 20) {
     try {
       const result = query(
         ref(this.database, "users"),
@@ -201,7 +196,7 @@ export class RankingBuilder {
         callback(
           Object.values(snapshot.val()).sort(
             (a: any, b: any) => b.score - a.score
-          )
+          ) as IUser[]
         );
       });
     } catch (error) {
