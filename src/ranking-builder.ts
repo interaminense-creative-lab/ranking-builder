@@ -40,9 +40,9 @@ export interface IRankingBuilder {
   password: string;
 }
 
-export interface IFirebaseConfig extends FirebaseOptions {}
+export interface IRankingBuilderConfig extends FirebaseOptions {}
 
-export class RankingBuilder {
+export class RankingBuilder<T extends IRankingBuilder> {
   app: FirebaseApp;
   auth: Auth;
   authenticated: boolean;
@@ -50,8 +50,8 @@ export class RankingBuilder {
   disableLog: boolean;
 
   constructor(
-    { disableLog = false, emailAddress, password }: IRankingBuilder,
-    config: IFirebaseConfig
+    { disableLog = false, emailAddress, password }: T,
+    config: IRankingBuilderConfig
   ) {
     this.app = initializeApp(config);
     this.auth = getAuth(this.app);
@@ -95,7 +95,7 @@ export class RankingBuilder {
     return true;
   }
 
-  private _isAuth() {
+  get isAuth() {
     if (!this.authenticated) {
       this._log("please, authenticate user.");
     }
@@ -104,7 +104,7 @@ export class RankingBuilder {
   }
 
   async createUser(user: IRawUser) {
-    if (!this._isAuth()) return;
+    if (!this.isAuth) return;
 
     try {
       const userId = uuidv4();
@@ -120,7 +120,7 @@ export class RankingBuilder {
 
       return { ok: true };
     } catch (error) {
-      if (!this._isAuth()) {
+      if (!this.isAuth) {
         this._log("an error occurred while creating the user.");
       }
 
@@ -129,7 +129,7 @@ export class RankingBuilder {
   }
 
   async updateUser(userId: string, user: IUser) {
-    if (!this._isAuth() || !this._isValidUserId(userId)) return;
+    if (!this.isAuth || !this._isValidUserId(userId)) return;
 
     try {
       await set(ref(this.database, `users/${userId}`), user);
@@ -138,7 +138,7 @@ export class RankingBuilder {
 
       return { ok: true };
     } catch (error) {
-      if (!this._isAuth()) {
+      if (!this.isAuth) {
         this._log("an error occurred while updating the user.");
       }
 
@@ -147,7 +147,7 @@ export class RankingBuilder {
   }
 
   async deleteUser(userId: string) {
-    if (!this._isAuth() || !this._isValidUserId(userId)) return null;
+    if (!this.isAuth || !this._isValidUserId(userId)) return null;
 
     try {
       await remove(ref(this.database, `users/${userId}`));
@@ -156,7 +156,7 @@ export class RankingBuilder {
 
       return { ok: true };
     } catch (error) {
-      if (!this._isAuth()) {
+      if (!this.isAuth) {
         this._log("an error occurred while updating the user.");
       }
 
@@ -165,7 +165,7 @@ export class RankingBuilder {
   }
 
   async getUser(userId: string) {
-    if (!this._isAuth() || !this._isValidUserId(userId)) return null;
+    if (!this.isAuth || !this._isValidUserId(userId)) return null;
 
     const snapshot = await get(child(ref(this.database), `users/${userId}`));
 
@@ -176,7 +176,7 @@ export class RankingBuilder {
 
       return user;
     } else {
-      if (!this._isAuth()) {
+      if (!this.isAuth) {
         this._log("an error occurred while getting user.");
       }
 
@@ -193,14 +193,20 @@ export class RankingBuilder {
       );
 
       return onValue(result, (snapshot) => {
-        callback(
-          Object.values(snapshot.val()).sort(
-            (a: any, b: any) => b.score - a.score
-          ) as IUser[]
-        );
+        if (snapshot.exists()) {
+          callback(
+            Object.values(snapshot.val()).sort(
+              (a: any, b: any) => b.score - a.score
+            ) as IUser[]
+          );
+
+          this._log("list users", snapshot.val());
+        } else {
+          callback([]);
+        }
       });
     } catch (error) {
-      if (!this._isAuth()) {
+      if (!this.isAuth) {
         this._log("an error occurred while listing users.");
       }
 
