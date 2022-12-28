@@ -65,6 +65,10 @@ rankingBuilder.listUsers((users: IUser[]) => {
 });
 ```
 
+## RankingBuilderRenderer
+
+`RankingBuilderRenderer` is a class that allows developers to easily render a table with the top users of their game or application. It works by receiving a rankingBuilder instance and a DOM node (e.g., a `div` element) as inputs, and it automatically generates a table with the top users based on the score. The table can be customized with additional features, such as the ability to delete or edit users. To learn more about RankingBuilderRenderer, check out the [RANKING_BUILDER_RENDERER_README.md](RANKING_BUILDER_RENDERER_README.md) file.
+
 ## How to get your firebase config?
 
 1. Go to the Firebase console page: https://console.firebase.google.com/
