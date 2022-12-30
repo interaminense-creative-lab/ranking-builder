@@ -1,10 +1,13 @@
 import { v4 as uuidv4, validate as uuidValidate } from "uuid";
-import { FirebaseApp, FirebaseOptions, initializeApp } from "firebase/app";
+import { FirebaseApp, initializeApp } from "firebase/app";
 import {
   Auth,
+  browserSessionPersistence,
   getAuth,
+  setPersistence,
+  signInAnonymously,
   signInWithEmailAndPassword,
-  signOut as signOutFirebase,
+  signOut as _signOut,
 } from "firebase/auth";
 import {
   child,
@@ -19,206 +22,197 @@ import {
   set,
   onValue,
 } from "firebase/database";
-
-export interface IRawUser {
-  name: string;
-  score: number;
-  time: string;
-}
-
-export interface IUser {
-  createDate: number;
-  id: string;
-  name: string;
-  score: number;
-  time: string;
-}
-
-export interface IRankingBuilder {
-  disableLog?: boolean;
-  emailAddress: string;
-  password: string;
-}
-
-export interface IRankingBuilderConfig extends FirebaseOptions {}
+import { MESSAGES } from "./constants";
+import {
+  IRankingBuilder,
+  IRankingBuilderConfig,
+  Credentials,
+  RawUser,
+  Data,
+  User,
+} from "./types";
 
 export class RankingBuilder<T extends IRankingBuilder> {
   app: FirebaseApp;
   auth: Auth;
-  authenticated: boolean;
   database: Database;
-  disableLog: boolean;
+  props: T;
 
-  constructor(
-    { disableLog = false, emailAddress, password }: T,
-    config: IRankingBuilderConfig
-  ) {
+  constructor(props: T, config: IRankingBuilderConfig) {
     this.app = initializeApp(config);
     this.auth = getAuth(this.app);
     this.database = getDatabase(this.app);
-    this.authenticated = false;
-    this.disableLog = disableLog;
+    this.props = props;
 
-    this.signIn(emailAddress, password);
+    this.signIn(this.props.credentials);
   }
 
-  async signIn(emailAddress: string, password: string) {
-    try {
-      await signInWithEmailAndPassword(this.auth, emailAddress, password);
+  get _isAuth() {
+    return !!this.auth.currentUser;
+  }
 
-      this.authenticated = true;
-      this._log("user is authenticated.");
+  get isAnonymous() {
+    return !!this.auth.currentUser?.isAnonymous;
+  }
+
+  async signIn(credentials?: Credentials) {
+    await setPersistence(this.auth, browserSessionPersistence);
+
+    try {
+      if (!this.auth.currentUser) {
+        if (credentials) {
+          const { emailAddress, password } = credentials;
+
+          await signInWithEmailAndPassword(this.auth, emailAddress, password);
+        } else {
+          await signInAnonymously(this.auth);
+        }
+      }
+
+      this._log(MESSAGES.USER_IS_AUTH);
     } catch (error) {
-      this.authenticated = false;
-      this._log("user is not authenticated.");
+      this._log(MESSAGES.USER_IS_NOT_AUTH);
     }
   }
 
   async signOut() {
     try {
-      await signOutFirebase(this.auth);
+      await _signOut(this.auth);
 
-      this._log("user is not authenticated anymore.");
-      this.authenticated = false;
+      this._log(MESSAGES.USER_IS_NOT_AUTH);
     } catch (error) {
-      this._log("an error occured and the user is still authenticated.");
+      this._log(MESSAGES.USER_IS_NOT_AUTH_FAIL);
     }
   }
 
-  private _isValidUserId(userId: string) {
-    if (!uuidValidate(userId)) {
-      this._log("userId is not valid.");
+  private _error(message: string) {
+    this._log(message);
 
-      return false;
-    }
-
-    return true;
+    return Promise.resolve(null);
   }
 
-  get isAuth() {
-    if (!this.authenticated) {
-      this._log("please, authenticate user.");
-    }
+  private _success(message: string) {
+    this._log(message);
 
-    return this.authenticated;
+    return Promise.resolve();
   }
 
-  async createUser(user: IRawUser) {
-    if (!this.isAuth) return;
+  async createUser(user: RawUser) {
+    if (!this._isAuth) {
+      return this._error(MESSAGES.PLEASE_AUTH_USER);
+    }
 
     try {
       const userId = uuidv4();
       const createDate = Date.now();
 
-      await set(ref(this.database, `users/${userId}`), {
+      await set(ref(this.database, `${this.props.path}/${userId}`), {
         ...user,
         createDate,
         id: userId,
       });
 
-      this._log("user created.", userId);
-
-      return { ok: true };
+      return this._success(MESSAGES.USER_CREATED);
     } catch (error) {
-      if (!this.isAuth) {
-        this._log("an error occurred while creating the user.");
+      if (!this._isAuth) {
+        return this._error(MESSAGES.USER_CREATED_FAIL);
       }
 
-      return null;
+      return this._error(MESSAGES.AN_ERROR_OCCURRED);
     }
   }
 
-  async updateUser(userId: string, user: IUser) {
-    if (!this.isAuth || !this._isValidUserId(userId)) return;
+  async updateUser(userId: string, user: User) {
+    if (!this._isAuth) {
+      return this._error(MESSAGES.PLEASE_AUTH_USER);
+    }
+
+    if (!uuidValidate(userId)) {
+      return this._error(MESSAGES.PLEASE_INSERT_CORRECT_USERID);
+    }
 
     try {
-      await set(ref(this.database, `users/${userId}`), user);
+      await set(ref(this.database, `${this.props.path}/${userId}`), user);
 
-      this._log("user updated.", userId);
-
-      return { ok: true };
+      return this._success(MESSAGES.USER_UPDATED);
     } catch (error) {
-      if (!this.isAuth) {
-        this._log("an error occurred while updating the user.");
-      }
-
-      return null;
+      return this._error(MESSAGES.AN_ERROR_OCCURRED);
     }
   }
 
   async deleteUser(userId: string) {
-    if (!this.isAuth || !this._isValidUserId(userId)) return null;
+    if (!this._isAuth) {
+      return this._error(MESSAGES.PLEASE_AUTH_USER);
+    }
+
+    if (!uuidValidate(userId)) {
+      return this._error(MESSAGES.PLEASE_INSERT_CORRECT_USERID);
+    }
 
     try {
-      await remove(ref(this.database, `users/${userId}`));
+      await remove(ref(this.database, `${this.props.path}/${userId}`));
 
-      this._log("user deleted.", userId);
-
-      return { ok: true };
+      return this._success(MESSAGES.USER_DELETED);
     } catch (error) {
-      if (!this.isAuth) {
-        this._log("an error occurred while updating the user.");
-      }
-
-      return null;
+      return this._error(MESSAGES.AN_ERROR_OCCURRED);
     }
   }
 
   async getUser(userId: string) {
-    if (!this.isAuth || !this._isValidUserId(userId)) return null;
+    if (!uuidValidate(userId)) {
+      return this._error(MESSAGES.PLEASE_INSERT_CORRECT_USERID);
+    }
 
-    const snapshot = await get(child(ref(this.database), `users/${userId}`));
+    const snapshot = await get(
+      child(ref(this.database), `${this.props.path}/${userId}`)
+    );
 
     if (snapshot.exists()) {
-      const user: IUser = snapshot.val();
+      const user: User = snapshot.val();
 
       this._log(user);
 
       return user;
     } else {
-      if (!this.isAuth) {
-        this._log("an error occurred while getting user.");
-      }
-
-      return null;
+      return this._error(MESSAGES.AN_ERROR_OCCURRED);
     }
   }
 
-  async listUsers(callback: (users: IUser[]) => void, top = 20) {
+  async listData(callback: (data: Data) => void, topResults = 10) {
     try {
       const result = query(
-        ref(this.database, "users"),
+        ref(this.database, this.props.path),
         orderByChild("score"),
-        limitToLast(top)
+        limitToLast(topResults)
       );
 
       return onValue(result, (snapshot) => {
         if (snapshot.exists()) {
-          callback(
-            Object.values(snapshot.val()).sort(
-              (a: any, b: any) => b.score - a.score
-            ) as IUser[]
-          );
+          const users = Object.values(snapshot.val()) as User[];
 
-          this._log("list users", snapshot.val());
+          callback({
+            total: users.length,
+            users: users.sort((a: any, b: any) => b.score - a.score),
+          });
+
+          this._log(snapshot.val());
         } else {
-          callback([]);
+          callback({
+            total: 0,
+            users: [],
+          });
         }
       });
     } catch (error) {
-      if (!this.isAuth) {
-        this._log("an error occurred while listing users.");
-      }
-
-      return null;
+      return this._error(MESSAGES.AN_ERROR_OCCURRED);
     }
   }
 
   private _log(...params: any) {
-    if (this.disableLog) {
+    if (this.props.disableLog) {
       return;
     }
 
-    console.log(`[Ranking Builder]`, ...params);
+    console.log(MESSAGES.PREFIX, ...params);
   }
 }
