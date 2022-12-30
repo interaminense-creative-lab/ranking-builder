@@ -1,20 +1,21 @@
-import { IRankingBuilder, IUser, RankingBuilder } from "./ranking-builder";
+import { RankingBuilder } from "./ranking-builder";
+import { Data, IRankingBuilder, User } from "./types";
 
 interface IRankingBuilderRenderer {
   app: Node;
   rankingBuilder: RankingBuilder<IRankingBuilder>;
-  top?: number;
+  topResults?: number;
 }
 
 export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
   rankingBuilder: RankingBuilder<IRankingBuilder>;
   app: Node;
-  top?: number;
+  topResults?: number;
 
-  constructor({ app, rankingBuilder, top }: T) {
+  constructor({ app, rankingBuilder, topResults }: T) {
     this.app = app;
     this.rankingBuilder = rankingBuilder;
-    this.top = top;
+    this.topResults = topResults;
     this._render();
   }
 
@@ -24,12 +25,40 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
     return `rankingBuilder${upperCaseName}`;
   }
 
-  private _tableTMPL(users: IUser[]) {
+  private _tableTMPL(users: User[]) {
     return `
       <table id="${this._generateId("table")}" border="1">
           <thead>
           <tr>
-              <th>ID</th>
+              <th>Name</th>
+              <th>Score</th>
+              <th>Time</th>
+              <th>Create Date</th>
+          </tr>
+          </thead>
+          <tbody>
+              ${users
+                .map(({ id, name, score, time, createDate }) => {
+                  return `
+                  <tr id="tr_${id}">
+                      <td>${name}</td>
+                      <td>${score}</td>
+                      <td>${time}</td>
+                      <td>${this.getDate(createDate)}</td>
+                  </tr>
+                  `;
+                })
+                .join("")}
+          </tbody>
+      </table>
+    `;
+  }
+
+  private _tableUserAuthTMPL(users: User[]) {
+    return `
+      <table id="${this._generateId("table")}" border="1">
+          <thead>
+          <tr>
               <th>Name</th>
               <th>Score</th>
               <th>Time</th>
@@ -43,7 +72,6 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
                 .map(({ id, name, score, time, createDate }) => {
                   return `
                   <tr id="tr_${id}">
-                      <td>${id}</td>
                       <td>${name}</td>
                       <td>${score}</td>
                       <td>${time}</td>
@@ -93,9 +121,14 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
     ) as HTMLFormElement | null;
   }
 
-  private _listUsers(users: IUser[]) {
+  private _listData({ users }: Data) {
     this._table && this._table.remove();
-    this.app.appendChild(this.createNode(this._tableTMPL(users)));
+
+    const tmpl = this.rankingBuilder.isAnonymous
+      ? this._tableTMPL(users)
+      : this._tableUserAuthTMPL(users);
+
+    this.app.appendChild(this.createNode(tmpl));
 
     if (this._table) {
       this._table.addEventListener("click", async (event) => {
@@ -117,13 +150,15 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
             this._editUserInput.addEventListener("submit", async (event) => {
               event.preventDefault();
 
-              const user = (await this.rankingBuilder.getUser(userId)) as IUser;
+              const user = await this.rankingBuilder.getUser(userId);
 
-              await this.rankingBuilder.updateUser(userId, {
-                ...user,
-                // @ts-ignore
-                name: event.target.name.value,
-              });
+              if (user) {
+                await this.rankingBuilder.updateUser(userId, {
+                  ...user,
+                  // @ts-ignore
+                  name: event.target.name.value,
+                });
+              }
             });
           }
 
@@ -144,9 +179,9 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
   // firebase database
 
   private async _render() {
-    await this.rankingBuilder.listUsers(
-      (users) => this._listUsers(users),
-      this.top
+    await this.rankingBuilder.listData(
+      (data) => this._listData(data),
+      this.topResults
     );
   }
 

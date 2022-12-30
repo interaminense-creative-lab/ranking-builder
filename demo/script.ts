@@ -15,15 +15,15 @@ window.onload = () => {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
   };
 
-  const rankingBuilder = new RankingBuilder(
-    { emailAddress: "test@test.com", password: "123456" },
-    config
-  );
+  const rankingBuilder = new RankingBuilder({ path: "users" }, config);
+
+  // @ts-ignore - expose the object to be used in devtools
+  window.rankingBuilder = rankingBuilder;
 
   const rankingBuilderRenderer = new RankingBuilderRenderer({
     app,
     rankingBuilder,
-    top: 10,
+    topResults: 20,
   });
 
   app.appendChild(
@@ -50,16 +50,14 @@ window.onload = () => {
     addUserFormNode.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      const response = await rankingBuilder.createUser({
+      await rankingBuilder.createUser({
         // @ts-ignore
         name: event.target.name.value,
         score: getRndInteger(0, 100),
         time: "00:05:00",
       });
 
-      if (response) {
-        addUserFormNode.remove();
-      }
+      addUserFormNode.remove();
     });
   });
 };
