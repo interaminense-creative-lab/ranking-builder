@@ -27,10 +27,12 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
 
   private _tableTMPL(users: User[]) {
     return `
-      <table id="${this._generateId("table")}" border="1">
+      <table class="ranking-builder-table" cellpadding="0" cellspacing="0" id="${this._generateId(
+        "table"
+      )}">
           <thead>
           <tr>
-              <th>Name</th>
+              <th class="align-right">Name</th>
               <th>Score</th>
               <th>Time</th>
               <th>Create Date</th>
@@ -41,7 +43,7 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
                 .map(({ id, name, score, time, createDate }) => {
                   return `
                   <tr id="tr_${id}">
-                      <td>${name}</td>
+                      <td class="align-right">${name}</td>
                       <td>${score}</td>
                       <td>${time}</td>
                       <td>${this.getDate(createDate)}</td>
@@ -56,10 +58,12 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
 
   private _tableUserAuthTMPL(users: User[]) {
     return `
-      <table id="${this._generateId("table")}" border="1">
+      <table class="ranking-builder-table" cellpadding="0" cellspacing="0" id="${this._generateId(
+        "table"
+      )}">
           <thead>
           <tr>
-              <th>Name</th>
+              <th class="align-right">Name</th>
               <th>Score</th>
               <th>Time</th>
               <th>Create Date</th>
@@ -72,7 +76,7 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
                 .map(({ id, name, score, time, createDate }) => {
                   return `
                   <tr id="tr_${id}">
-                      <td>${name}</td>
+                      <td class="align-right">${name}</td>
                       <td>${score}</td>
                       <td>${time}</td>
                       <td>${this.getDate(createDate)}</td>
@@ -195,10 +199,9 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
 
     const day = date.getDate();
     const month = date.getMonth() + 1;
-    const year = date.getFullYear();
     const hours = date.getHours();
     const minutes = date.getMinutes();
 
-    return day + ", " + month + ", " + year + ", " + hours + ":" + minutes;
+    return month + "/" + day + " " + hours + ":" + minutes;
   }
 }
