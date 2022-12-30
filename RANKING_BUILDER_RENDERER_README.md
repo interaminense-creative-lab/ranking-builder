@@ -41,15 +41,15 @@ const rankingBuilderRenderer = new RankingBuilderRenderer({
 
 In addition to the necessary parameters, the RankingBuilderRenderer class also has an optional parameter:
 
-top: a number that defines the number of top users that will be shown in the table. The default value is 10.
+topResults: a number that defines the number of top users that will be shown in the table. The default value is 10.
 
-## Example of use with the top parameter:
+## Example of use with the topResults parameter:
 
 ```javascript
 const rankingBuilderRenderer = new RankingBuilderRenderer({
   app,
   rankingBuilder,
-  top: 10,
+  topResults: 10,
 });
 ```
 

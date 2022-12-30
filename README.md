@@ -60,8 +60,8 @@ rankingBuilder.deleteUser("a5d6e7f8-g9h0-i1j2-k3l4-m5n6o7p8q9r0");
 
 rankingBuilder.getUser("a5d6e7f8-g9h0-i1j2-k3l4-m5n6o7p8q9r0");
 
-rankingBuilder.listUsers((users: IUser[]) => {
-  console.log(users);
+rankingBuilder.listData((data) => {
+  console.log(data);
 });
 ```
 
@@ -83,15 +83,16 @@ Your Firebase account settings are used to initialize the Firebase instance in y
 
 ## API
 
-| Method                                                          | Description                                                                                                                                                                  |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `signIn(emailAddress: string, password: string)`                | Used to sign in with the user. It is optional on the first instance because when you instantiate the `RankingBuilder` class, you need to pass the user's email and password. |
-| `signOut()`                                                     | Used to sign out the user, in case you need to sign in with another user.                                                                                                    |
-| `createUser(user: IRawUser)`                                    | Used to add a new user to the database.                                                                                                                                      |
-| `updateUser(userId: string, user: IRawUser)`                    | Used to update an existing user in the database.                                                                                                                             |
-| `deleteUser(userId: string)`                                    | Used to delete a user from the database.                                                                                                                                     |
-| `getUser(userId: string)`                                       | Used to get a specific user from the database.                                                                                                                               |
-| `listUsers(callbackFn: (users: IUser[]) => void; top?: number)` | Used to get a list of all users from the database.                                                                                                                           |
+| Method                                                            | Description                                                                                                                                                                                  |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `signIn({emailAddress, password}?: Credentials)`                  | Used to sign in with the user. It is optional on the first instance because when you instantiate the `RankingBuilder` class, at the first time you sign in, the user is signed as anonymous. |
+| `signOut()`                                                       | Used to sign out the user, in case you need to sign in with another user.                                                                                                                    |
+| `createUser(user: RawUser)`                                       | Used to add a new user to the database.                                                                                                                                                      |
+| `updateUser(userId: string, user: RawUser)`                       | Used to update an existing user in the database.                                                                                                                                             |
+| `deleteUser(userId: string)`                                      | Used to delete a user from the database.                                                                                                                                                     |
+| `getUser(userId: string)`                                         | Used to get a specific user from the database.                                                                                                                                               |
+| `listData(callbackFn: (data: Data) => void; topResults?: number)` | Used to get a list of users and total count from the database. Pass an optional param topResults to get count of users, by default the listData returns top 10 users based on their score.   |
+| `isAnonymous`                                                     | Used to know if the logged user is anonymous or not.                                                                                                                                         |
 
 ## Dependencies and Prerequisites
 
