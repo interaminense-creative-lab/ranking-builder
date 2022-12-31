@@ -23,8 +23,8 @@ export default defineConfig({
     minify: true,
     reportCompressedSize: true,
     lib: {
-      entry: path.resolve(__dirname, "src/index.ts"),
-      fileName: "index",
+      entry: path.resolve(__dirname, "src/main.ts"),
+      fileName: "main",
       formats: ["es", "cjs"],
     },
     rollupOptions: {
