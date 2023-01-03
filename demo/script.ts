@@ -1,4 +1,4 @@
-import { RankingBuilder, RankingBuilderRenderer } from "../src/index";
+import { RankingBuilder, RankingBuilderRenderer } from "../src/main";
 
 const getRndInteger = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -23,6 +23,7 @@ window.onload = () => {
   const rankingBuilderRenderer = new RankingBuilderRenderer({
     app,
     rankingBuilder,
+    title: "This is the title for ranking table",
     topResults: 20,
   });
 

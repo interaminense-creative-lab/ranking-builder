@@ -4,17 +4,20 @@ import { Data, IRankingBuilder, User } from "./types";
 interface IRankingBuilderRenderer {
   app: Node;
   rankingBuilder: RankingBuilder<IRankingBuilder>;
+  title?: string;
   topResults?: number;
 }
 
 export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
   rankingBuilder: RankingBuilder<IRankingBuilder>;
   app: Node;
+  title?: string;
   topResults?: number;
 
-  constructor({ app, rankingBuilder, topResults }: T) {
+  constructor({ app, rankingBuilder, title, topResults }: T) {
     this.app = app;
     this.rankingBuilder = rankingBuilder;
+    this.title = title;
     this.topResults = topResults;
     this._render();
   }
@@ -30,6 +33,7 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
       <table class="ranking-builder-table" cellpadding="0" cellspacing="0" id="${this._generateId(
         "table"
       )}">
+          ${this.title ? `<caption>${this.title}</caption>` : ""}
           <thead>
           <tr>
               <th class="align-right">Name</th>
@@ -197,11 +201,11 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
   getDate(timestamp: number) {
     const date = new Date(timestamp);
 
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-
-    return month + "/" + day + " " + hours + ":" + minutes;
+    return date.toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
 }

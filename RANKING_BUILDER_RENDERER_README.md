@@ -53,6 +53,19 @@ const rankingBuilderRenderer = new RankingBuilderRenderer({
 });
 ```
 
+## Example of use with the title parameter:
+
+title: a string that defines the title that will be shown in the table.
+
+```javascript
+const rankingBuilderRenderer = new RankingBuilderRenderer({
+  app,
+  rankingBuilder,
+  title: 'you can insert a title here'
+  topResults: 10,
+});
+```
+
 # Demo
 
 To see a demonstration of `RankingBuilderRenderer`, simply follow these steps:
