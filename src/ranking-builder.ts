@@ -52,7 +52,7 @@ export class RankingBuilder<T extends IRankingBuilder> {
   }
 
   get isAnonymous() {
-    return !!this.auth.currentUser?.isAnonymous;
+    return !this.auth.currentUser || this.auth.currentUser.isAnonymous;
   }
 
   async signIn(credentials?: Credentials) {

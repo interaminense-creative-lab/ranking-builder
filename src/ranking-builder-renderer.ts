@@ -29,6 +29,10 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
   }
 
   private _tableTMPL(users: User[]) {
+    if (!users.length) {
+      return "";
+    }
+
     return `
       <table class="ranking-builder-table" cellpadding="0" cellspacing="0" id="${this._generateId(
         "table"
@@ -61,10 +65,15 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
   }
 
   private _tableUserAuthTMPL(users: User[]) {
+    if (!users.length) {
+      return "";
+    }
+
     return `
       <table class="ranking-builder-table" cellpadding="0" cellspacing="0" id="${this._generateId(
         "table"
       )}">
+          ${this.title ? `<caption>${this.title}</caption>` : ""}
           <thead>
           <tr>
               <th class="align-right">Name</th>
