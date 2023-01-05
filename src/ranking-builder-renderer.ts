@@ -3,13 +3,13 @@ import { Data, IRankingBuilder, User } from "./types";
 
 interface IRankingBuilderRenderer {
   app: Node;
-  rankingBuilder: RankingBuilder<IRankingBuilder>;
+  rankingBuilder: RankingBuilder<IRankingBuilder, User>;
   title?: string;
   topResults?: number;
 }
 
 export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
-  rankingBuilder: RankingBuilder<IRankingBuilder>;
+  rankingBuilder: RankingBuilder<IRankingBuilder, User>;
   app: Node;
   title?: string;
   topResults?: number;
