@@ -97,7 +97,7 @@ export class RankingBuilder<T extends IRankingBuilder> {
     return Promise.resolve();
   }
 
-  async createUser(user: RawUser) {
+  async createUser<T extends RawUser>(user: T) {
     if (!this._isAuth) {
       return this._error(MESSAGES.PLEASE_AUTH_USER);
     }
