@@ -27,12 +27,11 @@ import {
   IRankingBuilder,
   IRankingBuilderConfig,
   Credentials,
-  RawUser,
   Data,
   User,
 } from "./types";
 
-export class RankingBuilder<T extends IRankingBuilder> {
+export class RankingBuilder<T extends IRankingBuilder, TUser> {
   app: FirebaseApp;
   auth: Auth;
   database: Database;
@@ -97,7 +96,7 @@ export class RankingBuilder<T extends IRankingBuilder> {
     return Promise.resolve();
   }
 
-  async createUser<T extends RawUser>(user: T) {
+  async createUser(user: TUser) {
     if (!this._isAuth) {
       return this._error(MESSAGES.PLEASE_AUTH_USER);
     }

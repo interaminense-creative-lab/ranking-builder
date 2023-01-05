@@ -18,12 +18,6 @@ export type User = {
   time: string;
 };
 
-export type RawUser = {
-  name: string;
-  score: number;
-  time: string;
-};
-
 export interface IRankingBuilder {
   disableLog?: boolean;
   path: string;
