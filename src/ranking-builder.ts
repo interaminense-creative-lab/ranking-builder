@@ -31,13 +31,13 @@ import {
   User,
 } from "./types";
 
-export class RankingBuilder<T extends IRankingBuilder, TUser> {
+export class RankingBuilder {
   app: FirebaseApp;
   auth: Auth;
   database: Database;
-  props: T;
+  props: IRankingBuilder;
 
-  constructor(props: T, config: IRankingBuilderConfig) {
+  constructor(props: IRankingBuilder, config: IRankingBuilderConfig) {
     this.app = initializeApp(config);
     this.auth = getAuth(this.app);
     this.database = getDatabase(this.app);
@@ -96,7 +96,7 @@ export class RankingBuilder<T extends IRankingBuilder, TUser> {
     return Promise.resolve();
   }
 
-  async createUser(user: TUser) {
+  async createUser(user: User) {
     if (!this._isAuth) {
       return this._error(MESSAGES.PLEASE_AUTH_USER);
     }
@@ -177,24 +177,29 @@ export class RankingBuilder<T extends IRankingBuilder, TUser> {
     }
   }
 
-  async listData(callback: (data: Data) => void, topResults = 10) {
+  async listData(
+    callback: (data: Data) => void,
+    topResults = 10,
+    sortBy = "score"
+  ) {
     try {
       const result = query(
         ref(this.database, this.props.path),
-        orderByChild("score"),
+        orderByChild(sortBy),
         limitToLast(topResults)
       );
 
       return onValue(result, (snapshot) => {
         if (snapshot.exists()) {
-          const users = Object.values(snapshot.val()) as User[];
-
-          callback({
+          const users = Object.values(snapshot.val());
+          const data = {
             total: users.length,
-            users: users.sort((a: any, b: any) => b.score - a.score),
-          });
+            users: users.sort((a: any, b: any) => b[sortBy] - a[sortBy]),
+          };
 
-          this._log(snapshot.val());
+          callback(data as Data);
+
+          this._log({ data, sortBy });
         } else {
           callback({
             total: 0,

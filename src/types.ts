@@ -11,11 +11,7 @@ export type Data = {
 };
 
 export type User = {
-  createDate: number;
-  id: string;
-  name: string;
-  score: number;
-  time: string;
+  [key: string]: string | number;
 };
 
 export interface IRankingBuilder {

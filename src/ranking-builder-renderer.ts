@@ -1,20 +1,25 @@
 import { RankingBuilder } from "./ranking-builder";
-import { Data, IRankingBuilder, User } from "./types";
+import { Data, User } from "./types";
 
 interface IRankingBuilderRenderer {
   app: Node;
-  rankingBuilder: RankingBuilder<IRankingBuilder, User>;
+  rankingBuilder: RankingBuilder;
   title?: string;
   topResults?: number;
 }
 
-export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
-  rankingBuilder: RankingBuilder<IRankingBuilder, User>;
+export class RankingBuilderRenderer {
+  rankingBuilder: RankingBuilder;
   app: Node;
   title?: string;
   topResults?: number;
 
-  constructor({ app, rankingBuilder, title, topResults }: T) {
+  constructor({
+    app,
+    rankingBuilder,
+    title,
+    topResults,
+  }: IRankingBuilderRenderer) {
     this.app = app;
     this.rankingBuilder = rankingBuilder;
     this.title = title;
@@ -28,7 +33,7 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
     return `rankingBuilder${upperCaseName}`;
   }
 
-  private _tableTMPL(users: User[]) {
+  private _tableTMPL({ users }: Data) {
     if (!users.length) {
       return "";
     }
@@ -54,7 +59,7 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
                       <td class="align-right">${name}</td>
                       <td>${score}</td>
                       <td>${time}</td>
-                      <td>${this.getDate(createDate)}</td>
+                      <td>${this.getDate(createDate as number)}</td>
                   </tr>
                   `;
                 })
@@ -64,7 +69,7 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
     `;
   }
 
-  private _tableUserAuthTMPL(users: User[]) {
+  private _tableUserAuthTMPL({ users }: Data) {
     if (!users.length) {
       return "";
     }
@@ -92,7 +97,7 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
                       <td class="align-right">${name}</td>
                       <td>${score}</td>
                       <td>${time}</td>
-                      <td>${this.getDate(createDate)}</td>
+                      <td>${this.getDate(createDate as number)}</td>
                       <td>
                           <button
                               data-id="${id}"
@@ -138,12 +143,12 @@ export class RankingBuilderRenderer<T extends IRankingBuilderRenderer> {
     ) as HTMLFormElement | null;
   }
 
-  private _listData({ users }: Data) {
+  private _listData(data: Data) {
     this._table && this._table.remove();
 
     const tmpl = this.rankingBuilder.isAnonymous
-      ? this._tableTMPL(users)
-      : this._tableUserAuthTMPL(users);
+      ? this._tableTMPL(data)
+      : this._tableUserAuthTMPL(data);
 
     this.app.appendChild(this.createNode(tmpl));
 
