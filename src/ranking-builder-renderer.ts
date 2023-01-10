@@ -96,7 +96,7 @@ export class RankingBuilderRenderer {
                   <tr id="tr_${id}">
                       <td class="align-right">${name}</td>
                       <td>${score}</td>
-                      <td>${time}</td>
+                      <td>${this.convertToTimeFormat(time as number)}</td>
                       <td>${this.getDate(createDate as number)}</td>
                       <td>
                           <button
@@ -201,15 +201,23 @@ export class RankingBuilderRenderer {
   // firebase database
 
   private async _render() {
-    await this.rankingBuilder.listData(
-      (data) => this._listData(data),
-      this.topResults
-    );
+    await this.rankingBuilder.listData((data) => this._listData(data), {
+      topResults: this.topResults,
+    });
   }
 
   createNode(tmpl: string) {
     return new DOMParser().parseFromString(tmpl, "text/html").body
       .firstChild as Node;
+  }
+
+  convertToTimeFormat(seconds: number) {
+    let hours = Math.floor(seconds / 3600);
+    let minutes = Math.floor((seconds % 3600) / 60);
+    let remainingSeconds = seconds % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
   }
 
   getDate(timestamp: number) {

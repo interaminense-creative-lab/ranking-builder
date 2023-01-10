@@ -179,8 +179,15 @@ export class RankingBuilder {
 
   async listData(
     callback: (data: Data) => void,
-    topResults = 10,
-    sortBy = "score"
+    {
+      topResults = 10,
+      sortBy = "score",
+      onlyOnce = false,
+    }: {
+      topResults?: number;
+      sortBy?: string;
+      onlyOnce?: boolean;
+    }
   ) {
     try {
       const result = query(
@@ -189,27 +196,50 @@ export class RankingBuilder {
         limitToLast(topResults)
       );
 
-      return onValue(result, (snapshot) => {
-        if (snapshot.exists()) {
-          const users = Object.values(snapshot.val());
-          const data = {
-            total: users.length,
-            users: users.sort((a: any, b: any) => b[sortBy] - a[sortBy]),
-          };
+      return onValue(
+        result,
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const users = Object.values(snapshot.val());
+            const data = {
+              total: users.length,
+              users: users.sort((a: any, b: any) => b[sortBy] - a[sortBy]),
+            };
 
-          callback(data as Data);
+            callback(data as Data);
 
-          this._log({ data, sortBy });
-        } else {
-          callback({
-            total: 0,
-            users: [],
-          });
-        }
-      });
+            this._log({ data, sortBy });
+          } else {
+            callback({
+              total: 0,
+              users: [],
+            });
+          }
+        },
+        () => {},
+        { onlyOnce }
+      );
     } catch (error) {
       return this._error(MESSAGES.AN_ERROR_OCCURRED);
     }
+  }
+
+  async upgradeUsers(callback: (user: User) => User) {
+    if (this.isAnonymous) {
+      return this._error(MESSAGES.PLEASE_AUTH_USER);
+    }
+
+    await this.listData(
+      ({ users }) => {
+        users.map(async (user) => {
+          await this.updateUser(user.id as string, callback(user));
+        });
+      },
+      {
+        topResults: 1000,
+        onlyOnce: true,
+      }
+    );
   }
 
   private _log(...params: any) {
