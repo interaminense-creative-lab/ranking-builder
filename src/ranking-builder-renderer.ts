@@ -1,27 +1,31 @@
 import { RankingBuilder } from "./ranking-builder";
-import { Data, User } from "./types";
+import { Data, SortBy, User } from "./types";
 
 interface IRankingBuilderRenderer {
   app: Node;
   rankingBuilder: RankingBuilder;
+  sortBy?: SortBy;
   title?: string;
   topResults?: number;
 }
 
 export class RankingBuilderRenderer {
-  rankingBuilder: RankingBuilder;
   app: Node;
+  rankingBuilder: RankingBuilder;
+  sortBy?: SortBy;
   title?: string;
   topResults?: number;
 
   constructor({
     app,
     rankingBuilder,
+    sortBy,
     title,
     topResults,
   }: IRankingBuilderRenderer) {
     this.app = app;
     this.rankingBuilder = rankingBuilder;
+    this.sortBy = sortBy;
     this.title = title;
     this.topResults = topResults;
     this._render();
@@ -203,6 +207,7 @@ export class RankingBuilderRenderer {
   private async _render() {
     await this.rankingBuilder.listData((data) => this._listData(data), {
       topResults: this.topResults,
+      sortBy: this.sortBy,
     });
   }
 

@@ -20,4 +20,6 @@ export interface IRankingBuilder {
   credentials?: Credentials;
 }
 
+export type SortBy = { value: string; type: "ASC" | "DESC" };
+
 export interface IRankingBuilderConfig extends FirebaseOptions {}

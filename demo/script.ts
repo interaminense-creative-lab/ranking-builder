@@ -25,6 +25,10 @@ window.onload = () => {
     rankingBuilder,
     title: "This is the title for ranking table",
     topResults: 20,
+    sortBy: {
+      value: "score",
+      type: "DESC",
+    },
   });
 
   app.appendChild(

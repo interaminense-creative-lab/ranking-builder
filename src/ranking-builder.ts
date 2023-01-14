@@ -21,6 +21,7 @@ import {
   remove,
   set,
   onValue,
+  limitToFirst,
 } from "firebase/database";
 import { MESSAGES } from "./constants";
 import {
@@ -29,6 +30,7 @@ import {
   Credentials,
   Data,
   User,
+  SortBy,
 } from "./types";
 
 export class RankingBuilder {
@@ -181,19 +183,25 @@ export class RankingBuilder {
     callback: (data: Data) => void,
     {
       topResults = 10,
-      sortBy = "score",
+      sortBy = {
+        value: "score",
+        type: "DESC",
+      },
       onlyOnce = false,
     }: {
       topResults?: number;
-      sortBy?: string;
+      sortBy?: SortBy;
       onlyOnce?: boolean;
     }
   ) {
+    console.log({ sortBy });
     try {
       const result = query(
         ref(this.database, this.props.path),
-        orderByChild(sortBy),
-        limitToLast(topResults)
+        orderByChild(sortBy.value),
+        sortBy.type === "DESC"
+          ? limitToLast(topResults)
+          : limitToFirst(topResults)
       );
 
       return onValue(
@@ -201,9 +209,13 @@ export class RankingBuilder {
         (snapshot) => {
           if (snapshot.exists()) {
             const users = Object.values(snapshot.val());
+            const sortedUsers = users.sort((a: any, b: any) => {
+              return b[sortBy.value] - a[sortBy.value];
+            });
             const data = {
               total: users.length,
-              users: users.sort((a: any, b: any) => b[sortBy] - a[sortBy]),
+              users:
+                sortBy.type === "DESC" ? sortedUsers : sortedUsers.reverse(),
             };
 
             callback(data as Data);
