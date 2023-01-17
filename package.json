@@ -3,7 +3,7 @@
   "repository": "https://github.com/interaminense-creative-lab/ranking-builder",
   "author": "Adriano Interaminense",
   "license": "MIT",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "exports": {
     ".": {
       "import": "./dist/main.js",
