@@ -194,7 +194,6 @@ export class RankingBuilder {
       onlyOnce?: boolean;
     }
   ) {
-    console.log({ sortBy });
     try {
       const result = query(
         ref(this.database, this.props.path),
@@ -203,6 +202,8 @@ export class RankingBuilder {
           ? limitToLast(topResults)
           : limitToFirst(topResults)
       );
+
+      !this._isAuth && (await this.signIn(this.props.credentials));
 
       return onValue(
         result,
