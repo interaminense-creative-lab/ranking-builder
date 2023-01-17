@@ -98,6 +98,22 @@ export class RankingBuilder {
     return Promise.resolve();
   }
 
+  private _validateWriteUser(userId: string) {
+    if (!this._isAuth) {
+      return this._error(MESSAGES.PLEASE_AUTH_USER);
+    }
+
+    if (this._isAuth && !this.isAnonymous) {
+      return this._error(MESSAGES.USER_DOES_NOT_HAVE_PERMISSION);
+    }
+
+    if (!uuidValidate(userId)) {
+      return this._error(MESSAGES.PLEASE_INSERT_CORRECT_USERID);
+    }
+
+    return true;
+  }
+
   async createUser(user: User) {
     if (!this._isAuth) {
       return this._error(MESSAGES.PLEASE_AUTH_USER);
@@ -124,13 +140,7 @@ export class RankingBuilder {
   }
 
   async updateUser(userId: string, user: User) {
-    if (!this._isAuth) {
-      return this._error(MESSAGES.PLEASE_AUTH_USER);
-    }
-
-    if (!uuidValidate(userId)) {
-      return this._error(MESSAGES.PLEASE_INSERT_CORRECT_USERID);
-    }
+    this._validateWriteUser(userId);
 
     try {
       await set(ref(this.database, `${this.props.path}/${userId}`), user);
@@ -142,13 +152,7 @@ export class RankingBuilder {
   }
 
   async deleteUser(userId: string) {
-    if (!this._isAuth) {
-      return this._error(MESSAGES.PLEASE_AUTH_USER);
-    }
-
-    if (!uuidValidate(userId)) {
-      return this._error(MESSAGES.PLEASE_INSERT_CORRECT_USERID);
-    }
+    this._validateWriteUser(userId);
 
     try {
       await remove(ref(this.database, `${this.props.path}/${userId}`));
