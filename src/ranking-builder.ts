@@ -98,17 +98,23 @@ export class RankingBuilder {
     return Promise.resolve();
   }
 
-  private _validateWriteUser(userId: string) {
+  private _isValidWriteUser(userId: string) {
     if (!this._isAuth) {
-      return this._error(MESSAGES.PLEASE_AUTH_USER);
+      this._error(MESSAGES.PLEASE_AUTH_USER);
+
+      return false;
     }
 
-    if (this._isAuth && !this.isAnonymous) {
-      return this._error(MESSAGES.USER_DOES_NOT_HAVE_PERMISSION);
+    if (this._isAuth && this.isAnonymous) {
+      this._error(MESSAGES.USER_DOES_NOT_HAVE_PERMISSION);
+
+      return false;
     }
 
     if (!uuidValidate(userId)) {
-      return this._error(MESSAGES.PLEASE_INSERT_CORRECT_USERID);
+      this._error(MESSAGES.PLEASE_INSERT_CORRECT_USERID);
+
+      return false;
     }
 
     return true;
@@ -140,7 +146,7 @@ export class RankingBuilder {
   }
 
   async updateUser(userId: string, user: User) {
-    this._validateWriteUser(userId);
+    if (!this._isValidWriteUser(userId)) return;
 
     try {
       await set(ref(this.database, `${this.props.path}/${userId}`), user);
@@ -152,7 +158,7 @@ export class RankingBuilder {
   }
 
   async deleteUser(userId: string) {
-    this._validateWriteUser(userId);
+    if (!this._isValidWriteUser(userId)) return;
 
     try {
       await remove(ref(this.database, `${this.props.path}/${userId}`));
@@ -164,6 +170,10 @@ export class RankingBuilder {
   }
 
   async getUser(userId: string) {
+    if (!this._isAuth) {
+      return this._error(MESSAGES.PLEASE_AUTH_USER);
+    }
+
     if (!uuidValidate(userId)) {
       return this._error(MESSAGES.PLEASE_INSERT_CORRECT_USERID);
     }
@@ -207,11 +217,11 @@ export class RankingBuilder {
           : limitToFirst(topResults)
       );
 
-      !this._isAuth && (await this.signIn(this.props.credentials));
-
       return onValue(
         result,
-        (snapshot) => {
+        async (snapshot) => {
+          !this._isAuth && (await this.signIn(this.props.credentials));
+
           if (snapshot.exists()) {
             const users = Object.values(snapshot.val());
             const sortedUsers = users.sort((a: any, b: any) => {
@@ -242,13 +252,15 @@ export class RankingBuilder {
   }
 
   async upgradeUsers(callback: (user: User) => User) {
-    if (this.isAnonymous) {
+    if (!this._isAuth) {
       return this._error(MESSAGES.PLEASE_AUTH_USER);
     }
 
     await this.listData(
       ({ users }) => {
         users.map(async (user) => {
+          if (!this._isValidWriteUser(user.id as string)) return;
+
           await this.updateUser(user.id as string, callback(user));
         });
       },

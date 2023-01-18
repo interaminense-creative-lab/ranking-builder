@@ -49,25 +49,27 @@ export class RankingBuilderRenderer {
           ${this.title ? `<caption>${this.title}</caption>` : ""}
           <thead>
           <tr>
-              <th class="align-right">Name</th>
-              <th>Score</th>
-              <th>Time</th>
-              <th>Create Date</th>
+            <th class="align-left">ID</th>
+            <th class="align-left">Name</th>
+            <th>Score</th>
+            <th>Time</th>
+            <th>Create Date</th>
           </tr>
           </thead>
           <tbody>
-              ${users
-                .map(({ id, name, score, time, createDate }) => {
-                  return `
-                  <tr id="tr_${id}">
-                      <td class="align-right">${name}</td>
-                      <td>${score}</td>
-                      <td>${time}</td>
-                      <td>${this.getDate(createDate as number)}</td>
-                  </tr>
-                  `;
-                })
-                .join("")}
+            ${users
+              .map(({ id, name, score, time, createDate }) => {
+                return `
+                <tr id="tr_${id}">
+                    <td>${id}</td>
+                    <td>${name}</td>
+                    <td>${score}</td>
+                    <td>${time}</td>
+                    <td>${this.getDate(createDate as number)}</td>
+                </tr>
+                `;
+              })
+              .join("")}
           </tbody>
       </table>
     `;
@@ -84,44 +86,45 @@ export class RankingBuilderRenderer {
       )}">
           ${this.title ? `<caption>${this.title}</caption>` : ""}
           <thead>
-          <tr>
-              <th class="align-right">Name</th>
-              <th>Score</th>
-              <th>Time</th>
-              <th>Create Date</th>
-              <th></th>
-              <th></th>
+            <th class="align-left">ID</th>
+            <th class="align-left">Name</th>
+            <th>Score</th>
+            <th>Time</th>
+            <th>Create Date</th>
+            <th></th>
+            <th></th>
           </tr>
           </thead>
           <tbody>
-              ${users
-                .map(({ id, name, score, time, createDate }) => {
-                  return `
-                  <tr id="tr_${id}">
-                      <td class="align-right">${name}</td>
-                      <td>${score}</td>
-                      <td>${this.convertToTimeFormat(time as number)}</td>
-                      <td>${this.getDate(createDate as number)}</td>
-                      <td>
-                          <button
-                              data-id="${id}"
-                              id="${this._generateId("editButton")}"
-                          >
-                              edit
-                          </button>
-                      </td>
-                      <td>
-                          <button
-                              data-id="${id}"
-                              id="${this._generateId("deleteButton")}"
-                          >
-                              delete
-                          </button>
-                      </td>
-                  </tr>
-                  `;
-                })
-                .join("")}
+            ${users
+              .map(({ id, name, score, time, createDate }) => {
+                return `
+                <tr id="tr_${id}">
+                  <td>${id}</td>
+                  <td>${name}</td>
+                  <td>${score}</td>
+                  <td>${this.convertToTimeFormat(time as number)}</td>
+                  <td>${this.getDate(createDate as number)}</td>
+                  <td>
+                      <button
+                          data-id="${id}"
+                          id="${this._generateId("editButton")}"
+                      >
+                          edit
+                      </button>
+                  </td>
+                  <td>
+                      <button
+                          data-id="${id}"
+                          id="${this._generateId("deleteButton")}"
+                      >
+                          delete
+                      </button>
+                  </td>
+                </tr>
+                `;
+              })
+              .join("")}
           </tbody>
       </table>
     `;
