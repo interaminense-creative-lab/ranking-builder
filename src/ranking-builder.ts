@@ -208,6 +208,8 @@ export class RankingBuilder {
       onlyOnce?: boolean;
     }
   ) {
+    !this._isAuth && (await this.signIn(this.props.credentials));
+
     try {
       const result = query(
         ref(this.database, this.props.path),
@@ -220,8 +222,6 @@ export class RankingBuilder {
       return onValue(
         result,
         async (snapshot) => {
-          !this._isAuth && (await this.signIn(this.props.credentials));
-
           if (snapshot.exists()) {
             const users = Object.values(snapshot.val());
             const sortedUsers = users.sort((a: any, b: any) => {
@@ -259,8 +259,6 @@ export class RankingBuilder {
     await this.listData(
       ({ users }) => {
         users.map(async (user) => {
-          if (!this._isValidWriteUser(user.id as string)) return;
-
           await this.updateUser(user.id as string, callback(user));
         });
       },
